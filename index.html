@@ -238,9 +238,117 @@
                 animation-iteration-count: 1 !important;
             }
         }
+
+        .mode-switch {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: var(--primary-color);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            z-index: 100;
+        }
+
+        .game-container {
+            display: none;
+            width: 100%;
+            max-width: 380px;
+            padding: 20px;
+            background-color: var(--tg-theme-secondary-bg-color, #ffffff);
+            border-radius: 24px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .memory-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .card {
+            aspect-ratio: 1;
+            background-color: var(--primary-color);
+            border-radius: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            color: white;
+            transition: transform 0.3s ease;
+            transform-style: preserve-3d;
+        }
+
+        .card.flipped {
+            transform: rotateY(180deg);
+            background-color: var(--primary-light);
+        }
+
+        .card-content {
+            display: none;
+            transform: rotateY(180deg);
+        }
+
+        .card.flipped .card-content {
+            display: block;
+        }
+
+        .game-stats {
+            text-align: center;
+            margin: 20px 0;
+            font-size: 1.2em;
+            color: var(--tg-theme-text-color, #000);
+        }
+
+        .win-message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 40px;
+            border-radius: 20px;
+            display: none;
+            z-index: 1000;
+            text-align: center;
+        }
+
+        .win-message button {
+            margin-top: 15px;
+            padding: 10px 20px;
+            background: white;
+            color: var(--primary-color);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* Dark theme additions */
+        .dark-theme .game-container {
+            background-color: #1e1e1e;
+        }
+
+        .dark-theme .game-stats {
+            color: #ffffff;
+        }
+
+        .dark-theme .card {
+            background-color: #2d2d2d;
+        }
+
+        .dark-theme .card.flipped {
+            background-color: var(--primary-dark);
+        }
     </style>
 </head>
 <body>
+    <button class="mode-switch" onclick="toggleMode()">🎮 Switch Mode</button>
+    
     <div class="calculator">
         <input type="text" id="display" readonly>
         <div class="buttons">
@@ -269,6 +377,19 @@
         </div>
     </div>
 
+    <div class="game-container">
+        <div class="game-stats">
+            Moves: <span id="moves">0</span>
+        </div>
+        <div class="memory-grid" id="gameGrid"></div>
+    </div>
+
+    <div class="win-message" id="winMessage">
+        <h2>Congratulations! 🎉</h2>
+        <p>You won in <span id="finalMoves">0</span> moves!</p>
+        <button onclick="startNewGame()">Play Again</button>
+    </div>
+
     <script>
         function appendToDisplay(value) {
             document.getElementById('display').value += value;
@@ -291,6 +412,121 @@
             const display = document.getElementById('display');
             display.value = display.value.slice(0, -1);
         }
+        const emojis = ['🐱', '🐶', '🐼', '🐨', '🦊', '🐯', '🦁', '🐸'];
+        let cards = [];
+        let flippedCards = [];
+        let matchedPairs = 0;
+        let moves = 0;
+        let isGameLocked = false;
+
+        function toggleMode() {
+            const calculator = document.querySelector('.calculator');
+            const gameContainer = document.querySelector('.game-container');
+            
+            if (calculator.style.display === 'none') {
+                calculator.style.display = 'block';
+                gameContainer.style.display = 'none';
+            } else {
+                calculator.style.display = 'none';
+                gameContainer.style.display = 'block';
+                startNewGame();
+            }
+        }
+
+        function createCard(emoji) {
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `<div class="card-content">${emoji}</div>`;
+            return card;
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function startNewGame() {
+            const grid = document.getElementById('gameGrid');
+            grid.innerHTML = '';
+            cards = [];
+            flippedCards = [];
+            matchedPairs = 0;
+            moves = 0;
+            isGameLocked = false;
+            document.getElementById('moves').textContent = moves;
+            document.getElementById('winMessage').style.display = 'none';
+
+            // Create pairs of cards
+            const gameEmojis = [...emojis, ...emojis];
+            shuffle(gameEmojis);
+
+            gameEmojis.forEach((emoji, index) => {
+                const card = createCard(emoji);
+                card.dataset.index = index;
+                card.addEventListener('click', () => flipCard(card));
+                cards.push(card);
+                grid.appendChild(card);
+            });
+        }
+
+        function flipCard(card) {
+            if (isGameLocked || flippedCards.includes(card) || card.classList.contains('matched')) {
+                return;
+            }
+
+            card.classList.add('flipped');
+            flippedCards.push(card);
+
+            if (flippedCards.length === 2) {
+                moves++;
+                document.getElementById('moves').textContent = moves;
+                isGameLocked = true;
+
+                const [card1, card2] = flippedCards;
+                const content1 = card1.querySelector('.card-content').textContent;
+                const content2 = card2.querySelector('.card-content').textContent;
+
+                if (content1 === content2) {
+                    card1.classList.add('matched');
+                    card2.classList.add('matched');
+                    matchedPairs++;
+                    flippedCards = [];
+                    isGameLocked = false;
+
+                    if (matchedPairs === emojis.length) {
+                        setTimeout(showWinMessage, 500);
+                    }
+                } else {
+                    setTimeout(() => {
+                        card1.classList.remove('flipped');
+                        card2.classList.remove('flipped');
+                        flippedCards = [];
+                        isGameLocked = false;
+                    }, 1000);
+                }
+            }
+        }
+
+        function showWinMessage() {
+            const winMessage = document.getElementById('winMessage');
+            document.getElementById('finalMoves').textContent = moves;
+            winMessage.style.display = 'block';
+
+            // Add haptic feedback for win
+            if (navigator.vibrate) {
+                navigator.vibrate([100, 50, 100]);
+            }
+        }
+
+        // Initialize game when switching to game mode
+        document.querySelector('.mode-switch').addEventListener('click', () => {
+            if (document.querySelector('.game-container').style.display !== 'none') {
+                startNewGame();
+            }
+        });
     </script>
 </body>
 </html>
