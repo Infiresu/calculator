@@ -7,9 +7,9 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
-            --primary-color: #9c27b0;
+            --primary-color: #854c8f;
             --primary-light: #ba68c8;
-            --primary-dark: #7b1fa2;
+            --primary-dark: #763891;
             --button-hover: rgba(156, 39, 176, 0.1);
             --button-active: rgba(156, 39, 176, 0.2);
         }
@@ -347,7 +347,7 @@
     </style>
 </head>
 <body>
-    <button class="mode-switch" onclick="toggleMode()">🎮 Switch Mode</button>
+    <button class="mode-switch" onclick="toggleMode()">🎮 Переключить</button>
     
     <div class="calculator">
         <input type="text" id="display" readonly>
@@ -379,15 +379,15 @@
 
     <div class="game-container">
         <div class="game-stats">
-            Moves: <span id="moves">0</span>
+            Ходов: <span id="moves">0</span>
         </div>
         <div class="memory-grid" id="gameGrid"></div>
     </div>
 
     <div class="win-message" id="winMessage">
-        <h2>Congratulations! 🎉</h2>
-        <p>You won in <span id="finalMoves">0</span> moves!</p>
-        <button onclick="startNewGame()">Play Again</button>
+        <h2>Поздравляем! 🎉</h2>
+        <p>Вы выиграли за <span id="finalMoves">0</span> ходов!</p>
+        <button onclick="startNewGame()">Сыграть заново</button>
     </div>
 
     <script>
